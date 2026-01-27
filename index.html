@@ -121,35 +121,55 @@
   }
 
   function spin() {
-    if (spinning || foods.length === 0) return;
+  if (spinning || foods.length === 0) return;
+  spinning = true;
 
-    spinning = true;
-    resultEl.innerText = "";
-    mapEl.innerHTML = "";
+  resultEl.innerText = "";
+  mapEl.innerHTML = "";
 
-    const chosen = foods[Math.floor(Math.random() * foods.length)];
-    const spinDegree = Math.random() * 2000 + 2500;
-    const start = performance.now();
+  const chosen = foods[Math.floor(Math.random() * foods.length)];
 
-    function animate(time) {
-      const progress = Math.min((time - start) / 2800, 1);
-      const ease = 1 - Math.pow(1 - progress, 3);
-      angle = (spinDegree * ease * Math.PI / 180) % (Math.PI * 2);
+  const totalDuration = 3200; // 整體動畫時間
+  const start = performance.now();
+  let lastAngle = angle;
 
-      ctx.save();
-      ctx.translate(size, size);
-      ctx.rotate(angle);
-      ctx.translate(-size, -size);
-      drawWheel();
-      ctx.restore();
+  function animate(time) {
+    const elapsed = time - start;
+    const progress = Math.min(elapsed / totalDuration, 1);
 
-      if (progress < 1) {
-        requestAnimationFrame(animate);
-      } else {
-        spinning = false;
-        showResult(chosen);
-      }
+    let delta;
+
+    // 🎯 三段式假動畫
+    if (progress < 0.3) {
+      // 前段：快速亂轉
+      delta = 0.35;
+    } else if (progress < 0.75) {
+      // 中段：忽快忽慢（假卡卡）
+      delta = 0.2 + Math.sin(progress * 20) * 0.15;
+    } else {
+      // 後段：慢慢停下
+      delta = (1 - progress) * 0.25;
     }
+
+    angle += delta;
+
+    ctx.save();
+    ctx.translate(size, size);
+    ctx.rotate(angle);
+    ctx.translate(-size, -size);
+    drawWheel();
+    ctx.restore();
+
+    if (progress < 1) {
+      requestAnimationFrame(animate);
+    } else {
+      spinning = false;
+      showResult(chosen);
+    }
+  }
+
+  requestAnimationFrame(animate);
+}
 
     requestAnimationFrame(animate);
   }
