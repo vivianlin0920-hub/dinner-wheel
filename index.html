@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>晚餐輪盤</title>
+  <title>🍜 晚餐輪盤</title>
 
   <style>
     body {
@@ -19,28 +19,27 @@
     .container {
       max-width: 420px;
       width: 100%;
-      padding: 24px;
+      padding: 20px;
       text-align: center;
     }
 
     h1 {
       font-size: 28px;
-      margin-bottom: 20px;
+      margin-bottom: 12px;
     }
 
-    .wheel {
-      font-size: 40px;
-      font-weight: bold;
-      background: white;
-      padding: 36px 16px;
-      border-radius: 20px;
-      margin-bottom: 24px;
-      box-shadow: 0 10px 20px rgba(0,0,0,.1);
-      transition: transform 1s ease-out;
+    .pointer {
+      width: 0;
+      height: 0;
+      border-left: 12px solid transparent;
+      border-right: 12px solid transparent;
+      border-bottom: 20px solid #dc2626;
+      margin: 0 auto -8px;
     }
 
-    .spin {
-      transform: rotate(1080deg);
+    canvas {
+      display: block;
+      margin: 0 auto 20px;
     }
 
     button {
@@ -51,18 +50,21 @@
       border-radius: 999px;
       background: #fb923c;
       color: white;
-      margin-bottom: 12px;
+    }
+
+    .result {
+      font-size: 26px;
+      font-weight: bold;
+      margin-top: 16px;
+      color: #9a3412;
     }
 
     a {
+      display: block;
+      margin-top: 10px;
       font-size: 14px;
       color: #7c2d12;
       text-decoration: none;
-    }
-
-    .map {
-      margin-top: 12px;
-      font-size: 16px;
     }
   </style>
 </head>
@@ -71,39 +73,87 @@
 <div class="container">
   <h1>🍜 晚餐輪盤</h1>
 
-  <div class="wheel" id="result">點下面開始</div>
+  <div class="pointer"></div>
+  <canvas id="wheel" width="280" height="280"></canvas>
 
   <button onclick="spin()">轉一下 🎯</button>
 
-  <div class="map" id="mapLink"></div>
+  <div class="result" id="result"></div>
+  <div id="map"></div>
 
   <a href="settings.html">⚙️ 編輯清單</a>
 </div>
 
 <script>
-  const result = document.getElementById("result");
-  const mapLink = document.getElementById("mapLink");
+  const canvas = document.getElementById("wheel");
+  const ctx = canvas.getContext("2d");
+  const size = canvas.width / 2;
+  const resultEl = document.getElementById("result");
+  const mapEl = document.getElementById("map");
+
+  let angle = 0;
+  let spinning = false;
 
   const foods = JSON.parse(localStorage.getItem("foods")) || [];
 
+  function drawWheel() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // 單色圓盤（形式感）
+    ctx.beginPath();
+    ctx.arc(size, size, size, 0, Math.PI * 2);
+    ctx.fillStyle = "#fed7aa";
+    ctx.fill();
+
+    // 裝飾圈
+    ctx.beginPath();
+    ctx.arc(size, size, size - 8, 0, Math.PI * 2);
+    ctx.strokeStyle = "#fb923c";
+    ctx.lineWidth = 4;
+    ctx.stroke();
+  }
+
   function spin() {
-    if (foods.length === 0) {
-      result.innerText = "請先新增食物 🍽️";
-      return;
+    if (spinning || foods.length === 0) return;
+    spinning = true;
+    resultEl.innerText = "";
+    mapEl.innerHTML = "";
+
+    const targetFood = foods[Math.floor(Math.random() * foods.length)];
+    const spinAngle = Math.random() * 2000 + 2000;
+    const start = performance.now();
+
+    function animate(time) {
+      const progress = Math.min((time - start) / 2500, 1);
+      const ease = 1 - Math.pow(1 - progress, 3);
+      angle = (spinAngle * ease * Math.PI / 180) % (Math.PI * 2);
+
+      ctx.save();
+      ctx.translate(size, size);
+      ctx.rotate(angle);
+      ctx.translate(-size, -size);
+      drawWheel();
+      ctx.restore();
+
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      } else {
+        spinning = false;
+        showResult(targetFood);
+      }
     }
 
-    result.classList.add("spin");
-    mapLink.innerHTML = "";
-
-    setTimeout(() => {
-      result.classList.remove("spin");
-      const item = foods[Math.floor(Math.random() * foods.length)];
-      result.innerText = item.name;
-      if (item.map) {
-        mapLink.innerHTML = `<a href="${item.map}" target="_blank">📍 查看附近店家</a>`;
-      }
-    }, 1000);
+    requestAnimationFrame(animate);
   }
+
+  function showResult(food) {
+    resultEl.innerText = `🍽️ ${food.name}`;
+    if (food.map) {
+      mapEl.innerHTML = `<a href="${food.map}" target="_blank">📍 查看附近店家</a>`;
+    }
+  }
+
+  drawWheel();
 </script>
 
 </body>
