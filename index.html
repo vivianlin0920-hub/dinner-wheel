@@ -28,13 +28,14 @@
       margin-bottom: 12px;
     }
 
+    /* 指針 */
     .pointer {
       width: 0;
       height: 0;
-      border-left: 12px solid transparent;
-      border-right: 12px solid transparent;
-      border-bottom: 20px solid #dc2626;
-      margin: 0 auto -8px;
+      border-left: 14px solid transparent;
+      border-right: 14px solid transparent;
+      border-bottom: 24px solid #dc2626;
+      margin: 0 auto -10px;
     }
 
     canvas {
@@ -88,45 +89,52 @@
   const canvas = document.getElementById("wheel");
   const ctx = canvas.getContext("2d");
   const size = canvas.width / 2;
+
   const resultEl = document.getElementById("result");
   const mapEl = document.getElementById("map");
+
+  const foods = JSON.parse(localStorage.getItem("foods")) || [];
 
   let angle = 0;
   let spinning = false;
 
-  const foods = JSON.parse(localStorage.getItem("foods")) || [];
-
   function drawWheel() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // 單色圓盤（形式感）
+    // 外圈
     ctx.beginPath();
-    ctx.arc(size, size, size, 0, Math.PI * 2);
-    ctx.fillStyle = "#fed7aa";
+    ctx.arc(size, size, size - 2, 0, Math.PI * 2);
+    ctx.fillStyle = "#fdba74";
     ctx.fill();
 
-    // 裝飾圈
+    // 內圈
     ctx.beginPath();
-    ctx.arc(size, size, size - 8, 0, Math.PI * 2);
-    ctx.strokeStyle = "#fb923c";
-    ctx.lineWidth = 4;
-    ctx.stroke();
+    ctx.arc(size, size, size - 18, 0, Math.PI * 2);
+    ctx.fillStyle = "#fff7ed";
+    ctx.fill();
+
+    // 中心點
+    ctx.beginPath();
+    ctx.arc(size, size, 8, 0, Math.PI * 2);
+    ctx.fillStyle = "#fb923c";
+    ctx.fill();
   }
 
   function spin() {
     if (spinning || foods.length === 0) return;
+
     spinning = true;
     resultEl.innerText = "";
     mapEl.innerHTML = "";
 
-    const targetFood = foods[Math.floor(Math.random() * foods.length)];
-    const spinAngle = Math.random() * 2000 + 2000;
+    const chosen = foods[Math.floor(Math.random() * foods.length)];
+    const spinDegree = Math.random() * 2000 + 2500;
     const start = performance.now();
 
     function animate(time) {
-      const progress = Math.min((time - start) / 2500, 1);
+      const progress = Math.min((time - start) / 2800, 1);
       const ease = 1 - Math.pow(1 - progress, 3);
-      angle = (spinAngle * ease * Math.PI / 180) % (Math.PI * 2);
+      angle = (spinDegree * ease * Math.PI / 180) % (Math.PI * 2);
 
       ctx.save();
       ctx.translate(size, size);
@@ -139,7 +147,7 @@
         requestAnimationFrame(animate);
       } else {
         spinning = false;
-        showResult(targetFood);
+        showResult(chosen);
       }
     }
 
