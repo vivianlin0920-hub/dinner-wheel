@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>今晚吃什麼？晚餐輪盤</title>
+  <title>晚餐輪盤</title>
+
   <style>
     body {
       margin: 0;
@@ -14,173 +15,95 @@
       align-items: center;
       height: 100vh;
     }
+
     .container {
-      width: 100%;
       max-width: 420px;
+      width: 100%;
       padding: 24px;
       text-align: center;
     }
+
     h1 {
-      font-size: 26px;
+      font-size: 28px;
       margin-bottom: 20px;
     }
-    .result {
-      font-size: 34px;
+
+    .wheel {
+      font-size: 40px;
       font-weight: bold;
-      color: #c2410c;
-      background: #fff;
+      background: white;
+      padding: 36px 16px;
       border-radius: 20px;
-      padding: 28px 16px;
-      margin-bottom: 20px;
-      box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+      margin-bottom: 24px;
+      box-shadow: 0 10px 20px rgba(0,0,0,.1);
+      transition: transform 1s ease-out;
     }
+
+    .spin {
+      transform: rotate(1080deg);
+    }
+
     button {
       width: 100%;
-      font-size: 20px;
-      padding: 16px;
+      font-size: 22px;
+      padding: 18px;
       border: none;
       border-radius: 999px;
-      background-color: #fb923c;
+      background: #fb923c;
       color: white;
-      cursor: pointer;
       margin-bottom: 12px;
     }
-    button:active {
-      transform: scale(0.97);
-    }
-    .input-group {
-      display: flex;
-      gap: 8px;
-      margin-top: 12px;
-    }
-    input {
-      flex: 1;
-      padding: 12px;
-      border-radius: 12px;
-      border: 1px solid #ddd;
-      font-size: 16px;
-    }
-    .small {
+
+    a {
       font-size: 14px;
       color: #7c2d12;
-      opacity: 0.8;
-      margin-top: 8px;
+      text-decoration: none;
     }
-    ul {
+
+    .map {
       margin-top: 12px;
-      padding: 0;
-      list-style: none;
-      max-height: 120px;
-      overflow-y: auto;
+      font-size: 16px;
     }
-    li {
-      background: #fff;
-      margin-bottom: 6px;
-      padding: 8px 12px;
-      border-radius: 10px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 15px;
-    }
-    li span {
-      cursor: pointer;
-      color: #dc2626;
-    }
-    /* 📱 手機版響應式調整 */
-@media (max-width: 480px) {
-  h1 {
-    font-size: 30px;
-  }
-
-  .result {
-    font-size: 42px;
-    padding: 36px 20px;
-  }
-
-  button {
-    font-size: 24px;
-    padding: 20px;
-  }
-
-  input {
-    font-size: 18px;
-    padding: 16px;
-  }
-
-  li {
-    font-size: 18px;
-  }
-}
-    
   </style>
 </head>
 <body>
 
 <div class="container">
-  <h1>🍜 今晚吃什麼？</h1>
+  <h1>🍜 晚餐輪盤</h1>
 
-  <div class="result" id="result">點下面開始</div>
+  <div class="wheel" id="result">點下面開始</div>
 
   <button onclick="spin()">轉一下 🎯</button>
 
-  <div class="input-group">
-    <input id="newFood" placeholder="新增想吃的…" />
-    <button onclick="addFood()">＋</button>
-  </div>
+  <div class="map" id="mapLink"></div>
 
-  <ul id="foodList"></ul>
-
-  <div class="small">點 ❌ 可刪除項目（會自動儲存）</div>
+  <a href="settings.html">⚙️ 編輯清單</a>
 </div>
 
 <script>
-  let foods = JSON.parse(localStorage.getItem("foods")) || [
-    "滷肉飯","牛肉麵","雞肉飯","鹽酥雞","鍋燒意麵",
-    "臭豆腐","鹹水雞","滷味","肉圓","刈包"
-  ];
-
   const result = document.getElementById("result");
-  const foodList = document.getElementById("foodList");
+  const mapLink = document.getElementById("mapLink");
 
-  function save() {
-    localStorage.setItem("foods", JSON.stringify(foods));
-    renderList();
-  }
+  const foods = JSON.parse(localStorage.getItem("foods")) || [];
 
   function spin() {
     if (foods.length === 0) {
-      result.innerText = "先加點選項啦 😂";
+      result.innerText = "請先新增食物 🍽️";
       return;
     }
-    const index = Math.floor(Math.random() * foods.length);
-    result.innerText = foods[index];
-  }
 
-  function addFood() {
-    const input = document.getElementById("newFood");
-    const value = input.value.trim();
-    if (!value) return;
-    foods.push(value);
-    input.value = "";
-    save();
-  }
+    result.classList.add("spin");
+    mapLink.innerHTML = "";
 
-  function removeFood(index) {
-    foods.splice(index, 1);
-    save();
+    setTimeout(() => {
+      result.classList.remove("spin");
+      const item = foods[Math.floor(Math.random() * foods.length)];
+      result.innerText = item.name;
+      if (item.map) {
+        mapLink.innerHTML = `<a href="${item.map}" target="_blank">📍 查看附近店家</a>`;
+      }
+    }, 1000);
   }
-
-  function renderList() {
-    foodList.innerHTML = "";
-    foods.forEach((food, index) => {
-      const li = document.createElement("li");
-      li.innerHTML = `${food} <span onclick="removeFood(${index})">❌</span>`;
-      foodList.appendChild(li);
-    });
-  }
-
-  renderList();
 </script>
 
 </body>
