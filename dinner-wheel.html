@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <title>今晚吃什麼？台灣小吃輪盤</title>
+  <style>
+    body {
+      font-family: "PingFang TC", "Microsoft JhengHei", sans-serif;
+      background: #fff7ed;
+      text-align: center;
+      padding-top: 60px;
+    }
+    h1 {
+      font-size: 28px;
+      margin-bottom: 20px;
+    }
+    #result {
+      font-size: 32px;
+      font-weight: bold;
+      margin: 30px 0;
+      color: #d97706;
+    }
+    button {
+      font-size: 20px;
+      padding: 12px 28px;
+      border: none;
+      border-radius: 999px;
+      background-color: #fb923c;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #f97316;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🍜 今晚吃什麼？台灣小吃輪盤</h1>
+  <div id="result">點擊開始轉盤 🎯</div>
+  <button onclick="spin()">轉一下！</button>
+
+  <script>
+    const foods = [
+      "滷肉飯",
+      "牛肉麵",
+      "乾麵",
+      "肉燥飯",
+      "雞肉飯",
+      "蚵仔煎",
+      "鹽酥雞",
+      "雞排",
+      "大腸包小腸",
+      "臭豆腐",
+      "關東煮",
+      "米粉湯",
+      "豬血湯",
+      "肉圓",
+      "碗粿",
+      "鹹水雞",
+      "炒米粉",
+      "炒麵",
+      "擔仔麵",
+      "刈包",
+      "滷味",
+      "鍋燒意麵"
+    ];
+
+    function spin() {
+      const randomIndex = Math.floor(Math.random() * foods.length);
+      document.getElementById("result").innerText = foods[randomIndex];
+    }
+  </script>
+
+</body>
+</html>
