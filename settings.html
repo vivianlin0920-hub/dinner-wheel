@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>編輯晚餐清單</title>
+
+  <style>
+    body {
+      font-family: "PingFang TC", "Microsoft JhengHei", sans-serif;
+      background: #fff7ed;
+      padding: 24px;
+    }
+
+    h1 {
+      text-align: center;
+    }
+
+    input {
+      width: 100%;
+      padding: 14px;
+      margin-bottom: 10px;
+      font-size: 16px;
+    }
+
+    button {
+      width: 100%;
+      padding: 14px;
+      font-size: 18px;
+      border-radius: 999px;
+      border: none;
+      background: #fb923c;
+      color: white;
+      margin-bottom: 20px;
+    }
+
+    li {
+      background: white;
+      padding: 12px;
+      border-radius: 10px;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+    }
+  </style>
+</head>
+<body>
+
+<h1>✏️ 編輯晚餐清單</h1>
+
+<input id="name" placeholder="食物名稱（例如：牛肉麵）">
+<input id="map" placeholder="Google Maps 連結（可留空）">
+<button onclick="add()">新增</button>
+
+<ul id="list"></ul>
+
+<a href="index.html">← 回轉盤</a>
+
+<script>
+  let foods = JSON.parse(localStorage.getItem("foods")) || [];
+  const list = document.getElementById("list");
+
+  function save() {
+    localStorage.setItem("foods", JSON.stringify(foods));
+    render();
+  }
+
+  function add() {
+    const name = document.getElementById("name").value.trim();
+    const map = document.getElementById("map").value.trim();
+    if (!name) return;
+    foods.push({ name, map });
+    document.getElementById("name").value = "";
+    document.getElementById("map").value = "";
+    save();
+  }
+
+  function remove(i) {
+    foods.splice(i, 1);
+    save();
+  }
+
+  function render() {
+    list.innerHTML = "";
+    foods.forEach((f, i) => {
+      list.innerHTML += `
+        <li>
+          ${f.name}
+          <span onclick="remove(${i})">❌</span>
+        </li>`;
+    });
+  }
+
+  render();
+</script>
+
+</body>
+</html>
