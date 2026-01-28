@@ -90,16 +90,19 @@
 </div>
 
 <script>
-  // ===== 狀態變數 =====
+  /* =========================
+     狀態與設定
+  ========================= */
   let pointerAngle = 0;
   let spinning = false;
 
-  // ===== 食物清單 =====
+  const COOLDOWN_TIME = 30 * 60 * 1000; // 30 分鐘
+
   const foods = [
     "牛肉麵","滷肉飯","鹽酥雞","雞排","蚵仔煎",
     "拉麵","壽司","丼飯","炸豬排","烏龍麵",
     "火鍋","麻辣鍋","壽喜燒",
-    "披薩","鐵板燒","生魚片","吃到飽"
+    "披薩"
   ];
 
   const canvas = document.getElementById("wheel");
@@ -109,7 +112,37 @@
   const resultEl = document.getElementById("result");
   const mapLinkEl = document.getElementById("mapLink");
 
-  // ===== 靜態輪盤（不轉）=====
+  /* =========================
+     工具：每日 00:00 自動重置
+  ========================= */
+  function resetIfNewDay() {
+    const today = new Date().toISOString().slice(0, 10);
+    const lastReset = localStorage.getItem("lastResetDate");
+
+    if (lastReset !== today) {
+      localStorage.removeItem("foodHistory");
+      localStorage.setItem("lastResetDate", today);
+    }
+  }
+
+  /* =========================
+     工具：取得可抽食物
+  ========================= */
+  function getAvailableFoods() {
+    resetIfNewDay();
+
+    const now = Date.now();
+    const history = JSON.parse(localStorage.getItem("foodHistory")) || {};
+
+    return foods.filter(food => {
+      if (!history[food]) return true;
+      return now - history[food] > COOLDOWN_TIME;
+    });
+  }
+
+  /* =========================
+     靜態輪盤（不旋轉）
+  ========================= */
   function drawWheel() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -117,7 +150,6 @@
     const arc = (Math.PI * 2) / segments;
     const colors = ["#ffffff", "#fcbf49", "#d62828"];
 
-    // 扇形色塊
     for (let i = 0; i < segments; i++) {
       const start = i * arc;
       const end = start + arc;
@@ -134,7 +166,6 @@
       ctx.stroke();
     }
 
-    // 外框（不超出）
     const borderWidth = 12;
     ctx.beginPath();
     ctx.arc(size, size, size - borderWidth / 2, 0, Math.PI * 2);
@@ -142,14 +173,15 @@
     ctx.lineWidth = borderWidth;
     ctx.stroke();
 
-    // 中心白圈
     ctx.beginPath();
     ctx.arc(size, size, 32, 0, Math.PI * 2);
     ctx.fillStyle = "#ffffff";
     ctx.fill();
   }
 
-  // ===== 只會轉動的指針 =====
+  /* =========================
+     旋轉的指針
+  ========================= */
   function drawPointer(angle) {
     ctx.save();
     ctx.translate(size, size);
@@ -166,18 +198,30 @@
     ctx.restore();
   }
 
-  // ===== 轉盤動畫（3 秒）=====
+  /* =========================
+     轉盤動畫（3 秒）
+  ========================= */
   function spin() {
     if (spinning) return;
     spinning = true;
 
     resultEl.innerText = "";
     mapLinkEl.innerText = "";
+    mapLinkEl.removeAttribute("href");
 
-    const chosen = foods[Math.floor(Math.random() * foods.length)];
+    const availableFoods = getAvailableFoods();
+
+    if (availableFoods.length === 0) {
+      resultEl.innerText = "⏳ 30 分鐘內都轉過了，稍等一下再試～";
+      spinning = false;
+      return;
+    }
+
+    const chosen =
+      availableFoods[Math.floor(Math.random() * availableFoods.length)];
+
     const start = performance.now();
     const duration = 3000;
-
     const startAngle = pointerAngle;
     const targetAngle = startAngle + Math.PI * 6 + Math.random() * Math.PI * 2;
 
@@ -201,14 +245,23 @@
     requestAnimationFrame(animate);
   }
 
+  /* =========================
+     顯示結果 + 紀錄冷卻
+  ========================= */
   function showResult(food) {
+    const history = JSON.parse(localStorage.getItem("foodHistory")) || {};
+    history[food] = Date.now();
+    localStorage.setItem("foodHistory", JSON.stringify(history));
+
     resultEl.innerText = `👉 ${food}`;
     const query = encodeURIComponent(food);
     mapLinkEl.href = `https://www.google.com/maps/search/${query}/`;
     mapLinkEl.innerText = "📍 打開 Google Maps 搜尋附近餐廳（約 5km）";
   }
 
-  // ===== 初始化 =====
+  /* =========================
+     初始化
+  ========================= */
   drawWheel();
   drawPointer(pointerAngle);
 </script>
