@@ -38,18 +38,7 @@
     canvas {
       width: 100%;
       height: 100%;
-    }
-
-    .pointer {
-      position: absolute;
-      top: -10px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 0;
-      height: 0;
-      border-left: 14px solid transparent;
-      border-right: 14px solid transparent;
-      border-bottom: 24px solid #dc2626;
+      display: block;
     }
 
     button {
@@ -60,6 +49,7 @@
       border: none;
       background: #fb923c;
       color: white;
+      cursor: pointer;
     }
 
     .result {
@@ -91,7 +81,6 @@
   <h1>🍽️ 今天吃什麼？</h1>
 
   <div class="wheel-wrap">
-    <div class="pointer"></div>
     <canvas id="wheel" width="260" height="260"></canvas>
   </div>
 
@@ -102,6 +91,7 @@
 </div>
 
 <script>
+  // 食物清單
   const foods = [
     // 台灣小吃
     "牛肉麵","滷肉飯","鹽酥雞","雞排","蚵仔煎",
@@ -116,107 +106,68 @@
   const canvas = document.getElementById("wheel");
   const ctx = canvas.getContext("2d");
   const size = canvas.width / 2;
+
+  const resultEl = document.getElementById("result");
+  const mapLinkEl = document.getElementById("mapLink");
+
   let angle = 0;
   let spinning = false;
 
-  function function drawWheel() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  // ===== 外圈（紅色厚邊）=====
-  ctx.beginPath();
-  ctx.arc(size, size, size - 2, 0, Math.PI * 2);
-  ctx.fillStyle = "#d62828";
-  ctx.fill();
-
-  // ===== 輪盤本體 =====
-  ctx.beginPath();
-  ctx.arc(size, size, size - 22, 0, Math.PI * 2);
-  ctx.fillStyle = "#fcbf49";
-  ctx.fill();
-
-  // ===== 內圈（白色）=====
-  ctx.beginPath();
-  ctx.arc(size, size, 32, 0, Math.PI * 2);
-  ctx.fillStyle = "#ffffff";
-  ctx.fill();
-
-  // ===== 指針（畫在輪盤上，會一起轉）=====
-  ctx.save();
-  ctx.translate(size, size);
-  ctx.beginPath();
-  ctx.moveTo(0, -size + 8);
-  ctx.lineTo(-10, -size + 28);
-  ctx.lineTo(10, -size + 28);
-  ctx.closePath();
-  ctx.fillStyle = "#ffffff";
-  ctx.fill();
-  ctx.restore();
-}
- {
+  // 畫輪盤（外圈 + 內圈 + 輪盤上的指針）
+  function drawWheel() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+    // 外圈（紅色）
     ctx.beginPath();
-    ctx.arc(size, size, size - 4, 0, Math.PI * 2);
-    ctx.fillStyle = "#fed7aa";
+    ctx.arc(size, size, size - 2, 0, Math.PI * 2);
+    ctx.fillStyle = "#d62828";
     ctx.fill();
 
+    // 內盤（黃色）
     ctx.beginPath();
-    ctx.arc(size, size, size - 20, 0, Math.PI * 2);
-    ctx.fillStyle = "#fff7ed";
+    ctx.arc(size, size, size - 22, 0, Math.PI * 2);
+    ctx.fillStyle = "#fcbf49";
     ctx.fill();
 
+    // 中心白色圓
     ctx.beginPath();
-    ctx.arc(size, size, 8, 0, Math.PI * 2);
-    ctx.fillStyle = "#fb923c";
+    ctx.arc(size, size, 32, 0, Math.PI * 2);
+    ctx.fillStyle = "#ffffff";
     ctx.fill();
-  }
 
-  function function spin() {
-  if (spinning) return;
-  spinning = true;
-
-  resultEl.innerText = "";
-  mapEl.innerHTML = "";
-
-  const chosen = foods[Math.floor(Math.random() * foods.length)];
-  const start = performance.now();
-  const duration = 3000; // 3 秒
-  const startAngle = angle;
-  const targetAngle = angle + Math.PI * 8 + Math.random() * Math.PI * 2;
-
-  function animate(time) {
-    const progress = Math.min((time - start) / duration, 1);
-    const ease = 1 - Math.pow(1 - progress, 3); // 慢慢停
-    angle = startAngle + (targetAngle - startAngle) * ease;
-
+    // 輪盤內的指針（三角形，會跟著轉）
     ctx.save();
     ctx.translate(size, size);
-    ctx.rotate(angle);
-    ctx.translate(-size, -size);
-    drawWheel();
+    ctx.beginPath();
+    ctx.moveTo(0, -size + 8);
+    ctx.lineTo(-10, -size + 30);
+    ctx.lineTo(10, -size + 30);
+    ctx.closePath();
+    ctx.fillStyle = "#ffffff";
+    ctx.fill();
     ctx.restore();
-
-    if (progress < 1) {
-      requestAnimationFrame(animate);
-    } else {
-      spinning = false;
-      showResult(chosen);
-    }
   }
 
-  requestAnimationFrame(animate);
-}
- {
+  // 轉盤動畫（3 秒）
+  function spin() {
     if (spinning) return;
     spinning = true;
+
+    resultEl.innerText = "";
+    mapLinkEl.innerText = "";
+    mapLinkEl.removeAttribute("href");
 
     const chosen = foods[Math.floor(Math.random() * foods.length)];
     const start = performance.now();
     const duration = 3000;
 
+    const startAngle = angle;
+    const targetAngle = angle + Math.PI * 8 + Math.random() * Math.PI * 2;
+
     function animate(time) {
       const progress = Math.min((time - start) / duration, 1);
-      angle += 0.3 * (1 - progress);
+      const ease = 1 - Math.pow(1 - progress, 3);
+      angle = startAngle + (targetAngle - startAngle) * ease;
 
       ctx.save();
       ctx.translate(size, size);
@@ -236,15 +187,15 @@
     requestAnimationFrame(animate);
   }
 
+  // 顯示結果 + Google Maps 搜尋
   function showResult(food) {
-    document.getElementById("result").innerText = `👉 ${food}`;
+    resultEl.innerText = `👉 ${food}`;
     const query = encodeURIComponent(food);
-    document.getElementById("mapLink").href =
-      `https://www.google.com/maps/search/${query}/`;
-    document.getElementById("mapLink").innerText =
-      "📍 查看附近評分最高的餐廳（5km）";
+    mapLinkEl.href = `https://www.google.com/maps/search/${query}/`;
+    mapLinkEl.innerText = "📍 打開 Google Maps 搜尋附近餐廳（約 5km）";
   }
 
+  // 初始化
   drawWheel();
 </script>
 
