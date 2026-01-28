@@ -29,7 +29,6 @@
     }
 
     .wheel-wrap {
-      position: relative;
       margin: 0 auto 20px;
       width: 260px;
       height: 260px;
@@ -91,15 +90,15 @@
 </div>
 
 <script>
-  // 食物清單
+  // ===== 狀態變數 =====
+  let pointerAngle = 0;
+  let spinning = false;
+
+  // ===== 食物清單 =====
   const foods = [
-    // 台灣小吃
     "牛肉麵","滷肉飯","鹽酥雞","雞排","蚵仔煎",
-    // 日本料理
     "拉麵","壽司","丼飯","炸豬排","烏龍麵",
-    // 火鍋
     "火鍋","麻辣鍋","壽喜燒",
-    // 披薩
     "披薩"
   ];
 
@@ -110,88 +109,86 @@
   const resultEl = document.getElementById("result");
   const mapLinkEl = document.getElementById("mapLink");
 
-  let angle = 0;
-  let spinning = false;
-
-  // 畫輪盤（外圈 + 內圈 + 輪盤上的指針）
+  // ===== 靜態輪盤（不轉）=====
   function drawWheel() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  const segments = 12;                 // 扇形數量（純視覺）
-  const arc = (Math.PI * 2) / segments;
-  const colors = ["#ffffff", "#fcbf49", "#d62828"]; // 白 / 黃 / 紅
+    const segments = 12;
+    const arc = (Math.PI * 2) / segments;
+    const colors = ["#ffffff", "#fcbf49", "#d62828"];
 
-  // ===== 畫扇形色塊 =====
-  for (let i = 0; i < segments; i++) {
-    const startAngle = i * arc;
-    const endAngle = startAngle + arc;
+    // 扇形色塊
+    for (let i = 0; i < segments; i++) {
+      const start = i * arc;
+      const end = start + arc;
 
+      ctx.beginPath();
+      ctx.moveTo(size, size);
+      ctx.arc(size, size, size - 22, start, end);
+      ctx.closePath();
+      ctx.fillStyle = colors[i % colors.length];
+      ctx.fill();
+
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+
+    // 外框（不超出）
+    const borderWidth = 12;
     ctx.beginPath();
-    ctx.moveTo(size, size);
-    ctx.arc(size, size, size - 22, startAngle, endAngle);
-    ctx.closePath();
-    ctx.fillStyle = colors[i % colors.length];
-    ctx.fill();
-
-    // 白色隔線
-    ctx.strokeStyle = "#ffffff";
-    ctx.lineWidth = 2;
+    ctx.arc(size, size, size - borderWidth / 2, 0, Math.PI * 2);
+    ctx.strokeStyle = "#d62828";
+    ctx.lineWidth = borderWidth;
     ctx.stroke();
+
+    // 中心白圈
+    ctx.beginPath();
+    ctx.arc(size, size, 32, 0, Math.PI * 2);
+    ctx.fillStyle = "#ffffff";
+    ctx.fill();
   }
 
-  // ===== 外圈（紅色厚邊）=====
-  ctx.beginPath();
-  ctx.arc(size, size, size - 2, 0, Math.PI * 2);
-  ctx.strokeStyle = "#d62828";
-  ctx.lineWidth = 12;
-  ctx.stroke();
+  // ===== 只會轉動的指針 =====
+  function drawPointer(angle) {
+    ctx.save();
+    ctx.translate(size, size);
+    ctx.rotate(angle);
 
-  // ===== 中心白色圓 =====
-  ctx.beginPath();
-  ctx.arc(size, size, 32, 0, Math.PI * 2);
-  ctx.fillStyle = "#ffffff";
-  ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(0, -size + 6);
+    ctx.lineTo(-12, -size + 34);
+    ctx.lineTo(12, -size + 34);
+    ctx.closePath();
+    ctx.fillStyle = "#ffffff";
+    ctx.fill();
 
-  // ===== 輪盤內的指針（三角形，會跟著轉）=====
-  ctx.save();
-  ctx.translate(size, size);
-  ctx.beginPath();
-  ctx.moveTo(0, -size + 6);
-  ctx.lineTo(-12, -size + 32);
-  ctx.lineTo(12, -size + 32);
-  ctx.closePath();
-  ctx.fillStyle = "#ffffff";
-  ctx.fill();
-  ctx.restore();
-}
+    ctx.restore();
+  }
 
-  // 轉盤動畫（3 秒）
+  // ===== 轉盤動畫（3 秒）=====
   function spin() {
     if (spinning) return;
     spinning = true;
 
     resultEl.innerText = "";
     mapLinkEl.innerText = "";
-    mapLinkEl.removeAttribute("href");
 
     const chosen = foods[Math.floor(Math.random() * foods.length)];
     const start = performance.now();
     const duration = 3000;
 
-    const startAngle = angle;
-    const targetAngle = angle + Math.PI * 8 + Math.random() * Math.PI * 2;
+    const startAngle = pointerAngle;
+    const targetAngle = startAngle + Math.PI * 6 + Math.random() * Math.PI * 2;
 
     function animate(time) {
       const progress = Math.min((time - start) / duration, 1);
       const ease = 1 - Math.pow(1 - progress, 3);
-      angle = startAngle + (targetAngle - startAngle) * ease;
 
-      ctx.save();
-      ctx.translate(size, size);
-      ctx.rotate(angle);
-      ctx.translate(-size, -size);
+      pointerAngle = startAngle + (targetAngle - startAngle) * ease;
+
       drawWheel();
-      ctx.restore();
+      drawPointer(pointerAngle);
 
       if (progress < 1) {
         requestAnimationFrame(animate);
@@ -204,7 +201,6 @@
     requestAnimationFrame(animate);
   }
 
-  // 顯示結果 + Google Maps 搜尋
   function showResult(food) {
     resultEl.innerText = `👉 ${food}`;
     const query = encodeURIComponent(food);
@@ -212,8 +208,9 @@
     mapLinkEl.innerText = "📍 打開 Google Maps 搜尋附近餐廳（約 5km）";
   }
 
-  // 初始化
+  // ===== 初始化 =====
   drawWheel();
+  drawPointer(pointerAngle);
 </script>
 
 </body>
