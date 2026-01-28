@@ -115,38 +115,55 @@
 
   // 畫輪盤（外圈 + 內圈 + 輪盤上的指針）
   function drawWheel() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // 外圈（紅色）
-    ctx.beginPath();
-    ctx.arc(size, size, size - 2, 0, Math.PI * 2);
-    ctx.fillStyle = "#d62828";
-    ctx.fill();
+  const segments = 12;                 // 扇形數量（純視覺）
+  const arc = (Math.PI * 2) / segments;
+  const colors = ["#ffffff", "#fcbf49", "#d62828"]; // 白 / 黃 / 紅
 
-    // 內盤（黃色）
-    ctx.beginPath();
-    ctx.arc(size, size, size - 22, 0, Math.PI * 2);
-    ctx.fillStyle = "#fcbf49";
-    ctx.fill();
+  // ===== 畫扇形色塊 =====
+  for (let i = 0; i < segments; i++) {
+    const startAngle = i * arc;
+    const endAngle = startAngle + arc;
 
-    // 中心白色圓
     ctx.beginPath();
-    ctx.arc(size, size, 32, 0, Math.PI * 2);
-    ctx.fillStyle = "#ffffff";
-    ctx.fill();
-
-    // 輪盤內的指針（三角形，會跟著轉）
-    ctx.save();
-    ctx.translate(size, size);
-    ctx.beginPath();
-    ctx.moveTo(0, -size + 8);
-    ctx.lineTo(-10, -size + 30);
-    ctx.lineTo(10, -size + 30);
+    ctx.moveTo(size, size);
+    ctx.arc(size, size, size - 22, startAngle, endAngle);
     ctx.closePath();
-    ctx.fillStyle = "#ffffff";
+    ctx.fillStyle = colors[i % colors.length];
     ctx.fill();
-    ctx.restore();
+
+    // 白色隔線
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = 2;
+    ctx.stroke();
   }
+
+  // ===== 外圈（紅色厚邊）=====
+  ctx.beginPath();
+  ctx.arc(size, size, size - 2, 0, Math.PI * 2);
+  ctx.strokeStyle = "#d62828";
+  ctx.lineWidth = 12;
+  ctx.stroke();
+
+  // ===== 中心白色圓 =====
+  ctx.beginPath();
+  ctx.arc(size, size, 32, 0, Math.PI * 2);
+  ctx.fillStyle = "#ffffff";
+  ctx.fill();
+
+  // ===== 輪盤內的指針（三角形，會跟著轉）=====
+  ctx.save();
+  ctx.translate(size, size);
+  ctx.beginPath();
+  ctx.moveTo(0, -size + 6);
+  ctx.lineTo(-12, -size + 32);
+  ctx.lineTo(12, -size + 32);
+  ctx.closePath();
+  ctx.fillStyle = "#ffffff";
+  ctx.fill();
+  ctx.restore();
+}
 
   // 轉盤動畫（3 秒）
   function spin() {
