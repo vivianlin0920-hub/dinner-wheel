@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>🍜 晚餐輪盤</title>
+  <title>今天吃什麼？</title>
 
   <style>
     body {
@@ -13,12 +13,12 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      height: 100vh;
+      min-height: 100vh;
     }
 
     .container {
-      max-width: 420px;
       width: 100%;
+      max-width: 420px;
       padding: 20px;
       text-align: center;
     }
@@ -28,92 +28,110 @@
       margin-bottom: 12px;
     }
 
-    /* 指針 */
+    .wheel-wrap {
+      position: relative;
+      margin: 0 auto 20px;
+      width: 260px;
+      height: 260px;
+    }
+
+    canvas {
+      width: 100%;
+      height: 100%;
+    }
+
     .pointer {
+      position: absolute;
+      top: -10px;
+      left: 50%;
+      transform: translateX(-50%);
       width: 0;
       height: 0;
       border-left: 14px solid transparent;
       border-right: 14px solid transparent;
       border-bottom: 24px solid #dc2626;
-      margin: 0 auto -10px;
-    }
-
-    canvas {
-      display: block;
-      margin: 0 auto 20px;
     }
 
     button {
       width: 100%;
       font-size: 22px;
-      padding: 18px;
-      border: none;
+      padding: 16px;
       border-radius: 999px;
+      border: none;
       background: #fb923c;
       color: white;
     }
 
     .result {
+      margin-top: 16px;
       font-size: 26px;
       font-weight: bold;
-      margin-top: 16px;
       color: #9a3412;
     }
 
-    a {
+    .map-link {
+      margin-top: 12px;
       display: block;
-      margin-top: 10px;
-      font-size: 14px;
-      color: #7c2d12;
-      text-decoration: none;
+      font-size: 16px;
+      color: #1d4ed8;
+      text-decoration: underline;
+    }
+
+    @media (max-width: 480px) {
+      .wheel-wrap {
+        width: 220px;
+        height: 220px;
+      }
     }
   </style>
 </head>
 <body>
 
 <div class="container">
-  <h1>🍜 晚餐輪盤</h1>
+  <h1>🍽️ 今天吃什麼？</h1>
 
-  <div class="pointer"></div>
-  <canvas id="wheel" width="280" height="280"></canvas>
+  <div class="wheel-wrap">
+    <div class="pointer"></div>
+    <canvas id="wheel" width="260" height="260"></canvas>
+  </div>
 
   <button onclick="spin()">轉一下 🎯</button>
 
   <div class="result" id="result"></div>
-  <div id="map"></div>
-
-  <a href="settings.html">⚙️ 編輯清單</a>
+  <a id="mapLink" class="map-link" target="_blank"></a>
 </div>
 
 <script>
+  const foods = [
+    // 台灣小吃
+    "牛肉麵","滷肉飯","鹽酥雞","雞排","蚵仔煎",
+    // 日本料理
+    "拉麵","壽司","丼飯","炸豬排","烏龍麵",
+    // 火鍋
+    "火鍋","麻辣鍋","壽喜燒",
+    // 披薩
+    "披薩"
+  ];
+
   const canvas = document.getElementById("wheel");
   const ctx = canvas.getContext("2d");
   const size = canvas.width / 2;
-
-  const resultEl = document.getElementById("result");
-  const mapEl = document.getElementById("map");
-
-  const foods = JSON.parse(localStorage.getItem("foods")) || [];
-
   let angle = 0;
   let spinning = false;
 
   function drawWheel() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // 外圈
     ctx.beginPath();
-    ctx.arc(size, size, size - 2, 0, Math.PI * 2);
-    ctx.fillStyle = "#fdba74";
+    ctx.arc(size, size, size - 4, 0, Math.PI * 2);
+    ctx.fillStyle = "#fed7aa";
     ctx.fill();
 
-    // 內圈
     ctx.beginPath();
-    ctx.arc(size, size, size - 18, 0, Math.PI * 2);
+    ctx.arc(size, size, size - 20, 0, Math.PI * 2);
     ctx.fillStyle = "#fff7ed";
     ctx.fill();
 
-    // 中心點
     ctx.beginPath();
     ctx.arc(size, size, 8, 0, Math.PI * 2);
     ctx.fillStyle = "#fb923c";
@@ -121,62 +139,42 @@
   }
 
   function spin() {
-  if (spinning || foods.length === 0) return;
-  spinning = true;
+    if (spinning) return;
+    spinning = true;
 
-  resultEl.innerText = "";
-  mapEl.innerHTML = "";
+    const chosen = foods[Math.floor(Math.random() * foods.length)];
+    const start = performance.now();
+    const duration = 3000;
 
-  const chosen = foods[Math.floor(Math.random() * foods.length)];
+    function animate(time) {
+      const progress = Math.min((time - start) / duration, 1);
+      angle += 0.3 * (1 - progress);
 
-  const totalDuration = 3200; // 整體動畫時間
-  const start = performance.now();
-  let lastAngle = angle;
+      ctx.save();
+      ctx.translate(size, size);
+      ctx.rotate(angle);
+      ctx.translate(-size, -size);
+      drawWheel();
+      ctx.restore();
 
-  function animate(time) {
-    const elapsed = time - start;
-    const progress = Math.min(elapsed / totalDuration, 1);
-
-    let delta;
-
-    // 🎯 三段式假動畫
-    if (progress < 0.3) {
-      // 前段：快速亂轉
-      delta = 0.35;
-    } else if (progress < 0.75) {
-      // 中段：忽快忽慢（假卡卡）
-      delta = 0.2 + Math.sin(progress * 20) * 0.15;
-    } else {
-      // 後段：慢慢停下
-      delta = (1 - progress) * 0.25;
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      } else {
+        spinning = false;
+        showResult(chosen);
+      }
     }
 
-    angle += delta;
-
-    ctx.save();
-    ctx.translate(size, size);
-    ctx.rotate(angle);
-    ctx.translate(-size, -size);
-    drawWheel();
-    ctx.restore();
-
-    if (progress < 1) {
-      requestAnimationFrame(animate);
-    } else {
-      spinning = false;
-      showResult(chosen);
-    }
+    requestAnimationFrame(animate);
   }
 
-  requestAnimationFrame(animate);
-}
-
-
   function showResult(food) {
-    resultEl.innerText = `🍽️ ${food.name}`;
-    if (food.map) {
-      mapEl.innerHTML = `<a href="${food.map}" target="_blank">📍 查看附近店家</a>`;
-    }
+    document.getElementById("result").innerText = `👉 ${food}`;
+    const query = encodeURIComponent(food);
+    document.getElementById("mapLink").href =
+      `https://www.google.com/maps/search/${query}/`;
+    document.getElementById("mapLink").innerText =
+      "📍 查看附近評分最高的餐廳（5km）";
   }
 
   drawWheel();
